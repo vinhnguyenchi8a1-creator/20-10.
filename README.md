@@ -1,0 +1,122 @@
+<!-- save as 20-10-card.html và mở bằng trình duyệt -->
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Chúc mừng 20-10</title>
+<style>
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans',Arial}
+  body{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#fff6ea,#ffe6f2);overflow:hidden}
+  .card{width:88vw;max-width:720px;background:rgba(255,255,255,0.9);border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,0.12);padding:28px;text-align:center;position:relative}
+  h1{margin:0 0 8px;font-size:2.2rem;color:#b3005b;letter-spacing:0.5px}
+  p.lead{margin:0 0 18px;font-size:1.05rem;color:#333}
+  .btns{display:flex;gap:12px;justify-content:center;margin-top:18px}
+  button{padding:10px 14px;border-radius:10px;border:0;cursor:pointer;font-weight:600}
+  .download{background:#ff7ab6;color:#fff}
+  .message{font-style:italic;color:#7a2b56;margin-top:12px}
+  #confetti {position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;}
+  footer{font-size:0.8rem;color:#666;margin-top:12px}
+  .scrolling{display:inline-block;white-space:nowrap;overflow:hidden;width:100%}
+  .scrolling span{display:inline-block;padding-left:100%;animation:scroll 12s linear infinite}
+  @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+</style>
+</head>
+<body>
+  <div class="card" id="card">
+    <h1>Chúc mừng Ngày Phụ Nữ Việt Nam 20-10 ❤️</h1>
+    <div class="scrolling"><span>Gửi tới bạn của tôi — chúc bạn luôn xinh, an yên và tràn đầy yêu thương ✨</span></div>
+    <p class="lead">Một lời chúc nhỏ, một tấm thiệp ấm — hy vọng bạn nhận được nụ cười hôm nay.</p>
+
+    <img id="flower" src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=900&auto=format&fit=crop&crop=faces" alt="flower" style="width:70%;max-width:380px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.08)">
+
+    <div class="btns">
+      <button class="download" id="saveBtn">Tải ảnh thiệp (.png)</button>
+      <button id="playBtn">Phát nhạc</button>
+    </div>
+
+    <p class="message" id="customMessage">Bạn là nguồn cảm hứng mỗi ngày — cảm ơn vì đã tồn tại.</p>
+    <footer>Nhấn vào "Tải ảnh" để lưu thiệp và gửi cho người thương 💌</footer>
+
+    <canvas id="confetti"></canvas>
+  </div>
+
+<script>
+/* confetti đơn giản */
+const canvas = document.getElementById('confetti');
+const ctx = canvas.getContext('2d');
+function resize(){canvas.width=canvas.clientWidth; canvas.height=canvas.clientHeight;}
+window.addEventListener('resize', resize); resize();
+
+class Piece {
+  constructor(){ this.reset(); }
+  reset(){
+    this.x = Math.random()*canvas.width;
+    this.y = Math.random()*-canvas.height;
+    this.w = 6 + Math.random()*10;
+    this.h = 6 + Math.random()*10;
+    this.vx = -1 + Math.random()*2;
+    this.vy = 1 + Math.random()*3;
+    this.color = ['#ffb6d5','#ffd3a5','#d1f0ff','#ffd1ee','#ffc9e6'][Math.floor(Math.random()*5)];
+    this.rot = Math.random()*360;
+    this.vr = -3 + Math.random()*6;
+  }
+  step(){
+    this.x += this.vx; this.y += this.vy; this.rot += this.vr;
+    if(this.y>canvas.height+40) this.reset();
+  }
+  draw(){
+    ctx.save();
+    ctx.translate(this.x,this.y);
+    ctx.rotate(this.rot*Math.PI/180);
+    ctx.fillStyle=this.color;
+    ctx.fillRect(-this.w/2,-this.h/2,this.w,this.h);
+    ctx.restore();
+  }
+}
+const pieces = new Array(60).fill().map(()=>new Piece());
+function loop(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(const p of pieces){ p.step(); p.draw(); }
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* Tải ảnh thiệp (render phần .card thành canvas bằng html2canvas-like minimal) */
+/* Đơn giản: chụp screenshot bằng SVG foreignObject -> drawable image */
+document.getElementById('saveBtn').addEventListener('click',async()=>{
+  const card = document.getElementById('card');
+  const rect = card.getBoundingClientRect();
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${rect.width}' height='${rect.height}'>
+  <foreignObject width='100%' height='100%'>
+    ${new XMLSerializer().serializeToString(card)}
+  </foreignObject>
+  </svg>`;
+  const blob = new Blob([svg],{type:'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = rect.width; c.height = rect.height;
+    const cc = c.getContext('2d');
+    cc.fillStyle = '#fff'; cc.fillRect(0,0,c.width,c.height);
+    cc.drawImage(img,0,0);
+    URL.revokeObjectURL(url);
+    c.toBlob(b=>{
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+      a.download = '20-10-card.png'; a.click();
+    },'image/png');
+  };
+  img.src = url;
+});
+
+/* Play / stop music (change src to your mp3) */
+let audio = new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_8d7a8c2dbe.mp3?filename=summer-walk-119548.mp3');
+let playing=false;
+document.getElementById('playBtn').addEventListener('click',()=>{
+  if(!playing){ audio.play(); playing=true; document.getElementById('playBtn').textContent='Dừng nhạc' }
+  else{ audio.pause(); playing=false; document.getElementById('playBtn').textContent='Phát nhạc' }
+});
+</script>
+</body>
+</html>
